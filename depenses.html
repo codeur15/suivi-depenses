@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi de Dépenses</title>
+    <style>
+        /* Style général */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            text-align: center;
+        }
+
+        /* Formulaire de connexion */
+        #loginForm {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #2e86de;
+        }
+
+        #loginForm div {
+            padding: 30px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #2e86de;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #1b5dab;
+        }
+
+        /* Application principale */
+        #appContainer {
+            display: none;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            margin: 20px;
+        }
+
+        /* Calendrier */
+        #calendarContainer {
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ccc;
+        }
+
+        td {
+            cursor: pointer;
+        }
+
+        td:hover {
+            background-color: #f1f1f1;
+        }
+
+        /* Carte de dépense */
+        .depense-card {
+            background-color: #fafafa;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        /* Badge pour les dates avec des dépenses */
+        .date-remplie {
+            background-color: #2e86de;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            text-align: center;
+            line-height: 20px;
+            margin-top: 5px;
+        }
+
+        /* Sélecteur de mois */
+        #moisSelector {
+            margin: 20px;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Formulaire de connexion -->
+    <div id="loginForm">
+        <div>
+            <h2>Veuillez entrer votre code d'identification</h2>
+            <input type="password" id="password" placeholder="Code d'identification">
+            <button onclick="checkPassword()">Se connecter</button>
+        </div>
+    </div>
+
+    <!-- Application principale -->
+    <div id="appContainer" style="display: none;">
+        <h1>Suivi des Dépenses</h1>
+        <div id="solde">Solde restant : ...</div>
+
+        <!-- Sélecteur de mois -->
+        <div id="moisSelector">
+            <label for="mois">Sélectionner un mois :</label>
+            <select id="mois" onchange="changerMoisSelectionne()">
+                <!-- Les mois seront ajoutés dynamiquement -->
+            </select>
+        </div>
+
+        <!-- Calendrier -->
+        <div id="calendarContainer"></div>
+
+        <!-- Détails des dépenses d'un jour -->
+        <div id="jourDetails" style="display:none;">
+            <h3>Dépenses du <span id="dateTitre"></span></h3>
+            <div id="depensesList"></div>
+            <input type="text" id="desc" placeholder="Description">
+            <input type="number" id="montant" placeholder="Montant (FCFA)">
+            <button onclick="ajouterDepense()">Ajouter</button>
+        </div>
+    </div>
+
+    <script>
+        // Récupérer le mot de passe enregistré, s'il existe
+        let motDePasseEnregistre = localStorage.getItem('motDePasse');
+        let depenses = {};
+        let moisActuel = "";
+
+        // Fonction pour vérifier le mot de passe et se connecter
+        function checkPassword() {
+            const enteredPassword = document.getElementById("password").value;
+
+            // Si aucun mot de passe n'est enregistré, c'est la première connexion
+            if (!motDePasseEnregistre) {
+                // Demander à l'utilisateur de saisir son mot de passe à la première connexion
+                if (enteredPassword.length < 6) {
+                    alert("Le mot de passe doit contenir au moins 6 caractères.");
+                    return;
+                }
+                motDePasseEnregistre = enteredPassword;
+                localStorage.setItem('motDePasse', motDePasseEnregistre);
+                alert("Mot de passe enregistré !");
+            } else {
+                // Si un mot de passe est déjà enregistré, vérifier si c'est le bon
+                if (enteredPassword === motDePasseEnregistre) {
+                    document.getElementById("loginForm").style.display = "none";
+                    document.getElementById("appContainer").style.display = "block";
+                    moisActuel = new Date().toISOString().slice(0, 7); // Mois actuel par défaut
+                    chargerMois();
+                    changerMois();
+                } else {
+                    alert("Mot de passe incorrect !");
+                }
+            }
+        }
+
+        // Fonction pour charger tous les mois enregistrés dans le selecteur
+        function chargerMois() {
+            const moisSelect = document.getElementById("mois");
+            for (let i = 0; i < 12; i++) {
+                const annee = new Date().getFullYear();
+                const mois = new Date(annee, i, 1).toISOString().slice(0, 7);
+                const option = document.createElement("option");
+                option.value = mois;
+                option.innerText = new Date(annee, i, 1).toLocaleString('default', { month: 'long' }) + " " + annee;
+                moisSelect.appendChild(option);
+            }
+            moisSelect.value = moisActuel; // Sélectionner le mois actuel par défaut
+        }
+
+        // Fonction pour changer de mois
+        function changerMois() {
+            depenses = JSON.parse(localStorage.getItem("depenses_data")) || {};
+            if (!depenses[moisActuel]) {
+                depenses[moisActuel] = { salaire: 0 };
+                localStorage.setItem("depenses_data", JSON.stringify(depenses));
+            }
+            genererCalendrier();
+            afficherSolde();
+        }
+
+        // Fonction pour changer le mois sélectionné
+        function changerMoisSelectionne() {
+            moisActuel = document.getElementById("mois").value;
+            changerMois();
+        }
+
+        // Générer le calendrier
+        function genererCalendrier() {
+            const container = document.getElementById("calendarContainer");
+            container.innerHTML = "";
+            const [annee, mois] = moisActuel.split("-");
+            const date = new Date(annee, mois - 1, 1);
+            const premierJour = date.getDay();
+            const joursDansMois = new Date(annee, mois, 0).getDate();
+            
+            const table = document.createElement("table");
+            const enTete = table.insertRow();
+            ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"].forEach(j => {
+                const th = document.createElement("th");
+                th.innerText = j;
+                enTete.appendChild(th);
+            });
+
+            let ligne = table.insertRow();
+            for (let i = 0; i < premierJour; i++) ligne.insertCell();
+            for (let jour = 1; jour <= joursDansMois; jour++) {
+                if (ligne.cells.length === 7) ligne = table.insertRow();
+                const cell = ligne.insertCell();
+                const dateStr = `${moisActuel}-${String(jour).padStart(2, '0')}`;
+                const span = document.createElement("div");
+                span.innerText = jour;
+                const dateDepenses = depenses[moisActuel][dateStr];
+                
+                if (dateDepenses && dateDepenses.length > 0) {
+                    const badge = document.createElement("div");
+                    badge.className = "date-remplie";
+                    badge.innerText = "✔";
+                    span.appendChild(badge);
+                }
+
+                cell.appendChild(span);
+                cell.onclick = () => afficherJour(dateStr, jour, cell);
+            }
+
+            container.appendChild(table);
+        }
+
+        // Afficher les dépenses d'un jour
+        function afficherJour(dateStr, jour, cell) {
+            const jourDetails = document.getElementById("jourDetails");
+            jourDetails.style.display = "block";
+            document.getElementById("dateTitre").innerText = `${jour}/${moisActuel}`;
+
+            const liste = document.getElementById("depensesList");
+            liste.innerHTML = "";
+            const dep = depenses[moisActuel][dateStr] || [];
+            dep.forEach(d => {
+                const div = document.createElement("div");
+                div.className = "depense-card";
+                div.innerHTML = `<span>${d.desc}</span><strong>${d.montant} FCFA</strong>`;
+                liste.appendChild(div);
+            });
+        }
+
+        // Ajouter une dépense
+        function ajouterDepense() {
+            const desc = document.getElementById("desc").value;
+            const montant = parseFloat(document.getElementById("montant").value);
+            if (!desc || isNaN(montant)) return alert("Remplis tous les champs !");
+            
+            const dateSelectionnee = document.getElementById("dateTitre").innerText.split("/")[1];
+            const dateStr = `${moisActuel}-${String(dateSelectionnee).padStart(2, '0')}`;
+
+            if (!depenses[moisActuel][dateStr]) {
+                depenses[moisActuel][dateStr] = [];
+            }
+            depenses[moisActuel][dateStr].push({ desc, montant });
+            localStorage.setItem("depenses_data", JSON.stringify(depenses));
+
+            document.getElementById("desc").value = '';
+            document.getElementById("montant").value = '';
+            afficherJour(dateStr, dateSelectionnee);
+            afficherSolde();
+        }
+
+        // Afficher le solde restant
+        function afficherSolde() {
+            const salaire = depenses[moisActuel].salaire || 0;
+            let total = 0;
+            Object.keys(depenses[moisActuel]).forEach(k => {
+                if (k === "salaire") return;
+                depenses[moisActuel][k].forEach(d => total += d.montant);
+            });
+            const reste = salaire - total;
+            document.getElementById("solde").innerText = `Solde restant : ${reste} FCFA`;
+        }
+    </script>
+</body>
+</html>
