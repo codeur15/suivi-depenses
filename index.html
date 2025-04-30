@@ -12,7 +12,42 @@
 
     <!-- Style de base -->
     <style>
-        /* Styles identiques au précédent */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+        }
+
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #ffffff;
+        }
+
+        .login-container input, .login-container button {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .error {
+            color: red;
+            font-size: 0.9em;
+        }
+
+        #main-content {
+            display: none;
+            padding: 20px;
+        }
+
+        #calendar {
+            margin-top: 20px;
+        }
+
         .expense-item {
             display: flex;
             justify-content: space-between;
@@ -36,7 +71,48 @@
         }
 
         .fc-daygrid-day-selected {
-            background-color: #f0f0f0 !important; /* Ajout d'une couleur de surbrillance pour la date sélectionnée */
+            background-color: #f0f0f0 !important;
+        }
+
+        .expense-form input, .expense-form button {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 5px;
+        }
+
+        .logout-btn {
+            margin-top: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background-color: #45a049;
+        }
+
+        /* Modale pour définir le solde */
+        .modal-container {
+            background: rgba(0, 0, 0, 0.5);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1000;
+            display: none;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            margin: 20% auto;
+            width: 300px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
         }
     </style>
 </head>
@@ -44,22 +120,22 @@
 
     <!-- Section de Connexion -->
     <div id="login-container" class="login-container">
-        <h2>Connexion</h2>
-        <input type="password" id="password" placeholder="Entrez votre mot de passe" />
-        <button id="login-btn">Se connecter</button>
-        <div id="error-message" class="error"></div>
+        <div>
+            <h2>Connexion</h2>
+            <input type="password" id="password" placeholder="Entrez votre mot de passe" />
+            <button id="login-btn">Se connecter</button>
+            <div id="error-message" class="error"></div>
+        </div>
     </div>
 
     <!-- Solde Mensuel et Calendrier, masqués si non connecté -->
-    <div id="main-content" style="display: none;">
+    <div id="main-content">
         <h2>Solde du mois de <span id="current-month"></span> : <span id="current-balance">0</span> FCFA</h2>
         <button id="set-balance-btn">Définir/Modifier le Solde du Mois</button>
 
         <div class="main-container">
-            <!-- Calendrier -->
             <div id="calendar"></div>
 
-            <!-- Liste des Dépenses -->
             <div id="expense-list" class="expense-list">
                 <h3 id="selected-date-title">Dépenses du jour :</h3>
                 <div id="expenses-for-day"></div>
@@ -74,43 +150,35 @@
             <button id="save-expense-btn">Enregistrer la Dépense</button>
         </div>
 
-        <!-- Bouton de déconnexion -->
         <button id="logout-btn" class="logout-btn">Se Déconnecter</button>
     </div>
 
     <!-- Modale pour définir le solde du mois -->
-    <div id="set-balance-modal" style="display:none;">
-        <div style="background: rgba(0, 0, 0, 0.5); position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000;">
-            <div style="background-color: white; padding: 20px; margin: 20% auto; width: 300px; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);">
-                <h3>Définir le Solde du Mois</h3>
-                <input type="number" id="new-balance" placeholder="Entrez le solde du mois" />
-                <button id="save-balance-btn">Enregistrer le Solde</button>
-                <button id="cancel-btn">Annuler</button>
-            </div>
+    <div id="set-balance-modal" class="modal-container">
+        <div class="modal-content">
+            <h3>Définir le Solde du Mois</h3>
+            <input type="number" id="new-balance" placeholder="Entrez le solde du mois" />
+            <button id="save-balance-btn">Enregistrer le Solde</button>
+            <button id="cancel-btn">Annuler</button>
         </div>
     </div>
 
     <script>
-        // Fonction pour afficher le mois en cours
         function getCurrentMonth() {
             const now = new Date();
             const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
             return monthNames[now.getMonth()];
         }
 
-        // Afficher le mois en cours dans l'interface
         document.getElementById("current-month").textContent = getCurrentMonth();
 
-        // Vérifier si un mot de passe est déjà stocké dans le localStorage
         const storedPassword = localStorage.getItem("user_password");
 
-        // Fonction pour afficher la page de connexion ou le contenu principal
         function showLoginPage() {
             document.getElementById("login-container").style.display = "block";
             document.getElementById("main-content").style.display = "none";
         }
 
-        // Si un mot de passe est déjà enregistré, on cache la page de connexion
         if (storedPassword) {
             document.getElementById("login-container").style.display = "none";
             document.getElementById("main-content").style.display = "block";
@@ -118,20 +186,17 @@
             showLoginPage();
         }
 
-        // Vérification et enregistrement du mot de passe
         document.getElementById("login-btn").addEventListener("click", function() {
             const enteredPassword = document.getElementById("password").value;
 
             if (!storedPassword) {
-                // Si aucun mot de passe n'est stocké, demander à l'utilisateur de le définir
                 if (enteredPassword.length >= 6) {
                     localStorage.setItem("user_password", enteredPassword);
-                    window.location.reload(); // Recharger la page pour afficher le contenu principal
+                    window.location.reload();
                 } else {
                     document.getElementById("error-message").textContent = "Le mot de passe doit comporter au moins 6 caractères.";
                 }
             } else {
-                // Vérifier si le mot de passe entré est correct
                 if (enteredPassword === storedPassword) {
                     document.getElementById("login-container").style.display = "none";
                     document.getElementById("main-content").style.display = "block";
@@ -141,40 +206,31 @@
             }
         });
 
-        // Initialiser le solde mensuel
         let currentBalance = parseFloat(localStorage.getItem("expense_balance") || 0);
         const currentBalanceDisplay = document.getElementById("current-balance");
-
-        // Mettre à jour l'affichage du solde
         currentBalanceDisplay.textContent = currentBalance;
 
-        // Récupérer les anciennes dépenses depuis le localStorage
         let expenses = JSON.parse(localStorage.getItem("expenses")) || [];
 
-        // Initialiser le calendrier avec FullCalendar
         const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
             initialView: 'dayGridMonth',
             locale: 'fr',
-            height: 500,  // Réduire la taille du calendrier
+            height: 500,
             events: [],
             dateClick: function(info) {
                 const selectedDate = info.dateStr;
-
-                // Afficher la date sélectionnée
                 const dateTitle = document.getElementById("selected-date-title");
                 const date = new Date(selectedDate);
                 dateTitle.innerHTML = `Dépenses du ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
 
-                // Mettre à jour la couleur de la date sélectionnée
                 document.querySelectorAll('.fc-daygrid-day').forEach(day => {
                     day.classList.remove('fc-daygrid-day-selected');
                 });
                 info.dayEl.classList.add('fc-daygrid-day-selected');
 
-                // Afficher les dépenses pour cette date
                 const expensesForDay = expenses.filter(exp => exp.date === selectedDate);
                 const expensesForDayContainer = document.getElementById("expenses-for-day");
-                expensesForDayContainer.innerHTML = ''; // Réinitialiser la liste
+                expensesForDayContainer.innerHTML = '';
                 if (expensesForDay.length > 0) {
                     expensesForDay.forEach(exp => {
                         const expenseItem = document.createElement('div');
@@ -191,62 +247,47 @@
             }
         });
 
-        // Rendu du calendrier
         calendar.render();
 
-        // Ajouter une dépense
         document.getElementById("save-expense-btn").addEventListener("click", function() {
             const description = document.getElementById("expense-description").value;
             const amount = parseFloat(document.getElementById("expense-amount").value);
             const date = calendar.getDate().toISOString().split('T')[0];
 
             if (description && !isNaN(amount)) {
-                // Ajouter la dépense au tableau
                 expenses.push({ description, amount, date });
 
-                // Mettre à jour le solde
                 currentBalance -= amount;
                 localStorage.setItem("expense_balance", currentBalance);
                 currentBalanceDisplay.textContent = currentBalance;
 
-                // Sauvegarder les dépenses dans le localStorage
                 localStorage.setItem("expenses", JSON.stringify(expenses));
-
-                // Rafraîchir la page pour voir les changements
                 location.reload();
             }
         });
 
-        // Supprimer une dépense
         document.addEventListener("click", function(event) {
             if (event.target.classList.contains("delete-expense-btn")) {
                 const description = event.target.getAttribute("data-description");
                 const date = event.target.getAttribute("data-date");
                 const amount = parseFloat(event.target.getAttribute("data-amount"));
 
-                // Supprimer la dépense
                 expenses = expenses.filter(exp => !(exp.description === description && exp.date === date));
 
-                // Mettre à jour le solde
                 currentBalance += amount;
                 localStorage.setItem("expense_balance", currentBalance);
                 currentBalanceDisplay.textContent = currentBalance;
 
-                // Sauvegarder les dépenses restantes
                 localStorage.setItem("expenses", JSON.stringify(expenses));
-
-                // Rafraîchir la page pour voir les changements
                 location.reload();
             }
         });
 
-        // Déconnexion
         document.getElementById("logout-btn").addEventListener("click", function() {
             localStorage.removeItem("user_password");
             location.reload();
         });
 
-        // Modifier le solde du mois
         document.getElementById("set-balance-btn").addEventListener("click", function() {
             document.getElementById("set-balance-modal").style.display = "block";
         });
@@ -258,8 +299,6 @@
                 localStorage.setItem("expense_balance", currentBalance);
                 currentBalanceDisplay.textContent = currentBalance;
                 document.getElementById("set-balance-modal").style.display = "none";
-
-                // Rafraîchir la page pour voir le changement
                 location.reload();
             }
         });
