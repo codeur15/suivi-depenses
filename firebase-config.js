@@ -4,15 +4,13 @@ import { getDatabase, ref, set, get, child, update } from "https://www.gstatic.c
 
 // Configuration Firebase
 const firebaseConfig = {
-  apiKey: "VOTRE_API_KEY",
-  authDomain: "VOTRE_AUTH_DOMAIN",
-  databaseURL: "VOTRE_DATABASE_URL",
-  projectId: "VOTRE_PROJECT_ID",
-  storageBucket: "VOTRE_STORAGE_BUCKET",
-  messagingSenderId: "VOTRE_MESSAGING_SENDER_ID",
-  appId: "VOTRE_APP_ID",
-  measurementId: "VOTRE_MEASUREMENT_ID"
-};
+    apiKey: "AIzaSyD-wGCPNpOg8jcgqvKencm4ZCEIIuvpQXo",
+    authDomain: "suivi-depenses-a75ef.firebaseapp.com",
+    projectId: "suivi-depenses-a75ef",
+    storageBucket: "suivi-depenses-a75ef.firebasestorage.app",
+    messagingSenderId: "10646602925",
+    appId: "1:10646602925:web:b952f5b50bc12a1af57224"
+  };
 
 // Initialisation de Firebase
 const app = initializeApp(firebaseConfig);
